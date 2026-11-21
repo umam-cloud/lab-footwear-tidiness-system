@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Informasi Klasifikasi Kerapian Sandal Lab | PSD</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0b1120;
+      color: #f1f5f9;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(30, 58, 138, 0.25) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(13, 148, 136, 0.2) 0px, transparent 50%);
+      background-attachment: fixed;
+    }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card-hover:hover {
+      border-color: rgba(99, 102, 241, 0.3);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+    }
+    .scanner-line {
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #22c55e, transparent);
+      box-shadow: 0 0 15px #22c55e;
+      animation: scan 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    @keyframes scan {
+      0% { top: 0%; opacity: 0; }
+      15% { opacity: 1; }
+      85% { opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="min-h-screen font-sans flex flex-col justify-between antialiased">
+
+  <!-- TOP HEADER / NAVBAR -->
+  <header class="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-900/80 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-bold shadow-lg shadow-emerald-500/20">
+          <i class="fa-solid fa-shoe-prints text-lg"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-bold text-lg text-white tracking-tight">SI-KerapianLab</h1>
+            <span class="text-xs px-2 py-0.5 rounded-full font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              v1.0 • XGBoost
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Sistem Cerdas Klasifikasi Kerapian Sandal Laboratorium Komputer (PSD)</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50 text-xs text-slate-300 font-mono">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Akurasi Model: <strong class="text-emerald-400">{{ model_accuracy }}</strong></span>
+        </div>
+        <a href="#info-section" class="text-xs text-slate-400 hover:text-white px-2.5 py-1.5 rounded-lg hover:bg-slate-800 transition">
+          <i class="fa-regular fa-circle-question mr-1"></i> Tentang
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-8">
+
+    <!-- HERO INTRO BANNER -->
+    <section class="glass-card rounded-2xl p-6 sm:p-8 relative overflow-hidden border-slate-800">
+      <div class="absolute -right-16 -top-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -left-16 -bottom-16 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div class="space-y-2 max-w-2xl">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 mb-1">
+            <i class="fa-solid fa-microchip"></i> Pengolahan Citra Digital (PSD) • 14 Fitur GLCM + Warna
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-snug">
+            Klasifikasi Otomatis Penataan Sandal
+          </h2>
+          <p class="text-slate-300 text-sm leading-relaxed">
+            Deteksi cepat tingkat kerapian sandal laboratorium menggunakan kamera langsung atau upload file citra. Didukung algoritma 
+            <span class="text-emerald-400 font-semibold">XGBoost Classifier</span> dan ekstraksi fitur tekstur GLCM Haralick berpresisi tinggi.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-3 shrink-0">
+          <div class="text-center px-4 py-3 rounded-xl bg-slate-900/60 border border-slate-800">
+            <span class="block text-xl font-bold text-emerald-400 font-mono">97.44%</span>
+            <span class="text-[11px] text-slate-400 uppercase tracking-wider">Test Accuracy</span>
+          </div>
+          <div class="text-center px-4 py-3 rounded-xl bg-slate-900/60 border border-slate-800">
+            <span class="block text-xl font-bold text-indigo-400 font-mono">14</span>
+            <span class="text-[11px] text-slate-400 uppercase tracking-wider">Fitur Citra</span>
+          </div>
+          <div class="text-center px-4 py-3 rounded-xl bg-slate-900/60 border border-slate-800">
+            <span class="block text-xl font-bold text-amber-400 font-mono">2</span>
+            <span class="text-[11px] text-slate-400 uppercase tracking-wider">Kelas Status</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- WORKSPACE SECTION: INPUT & RESULT -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+      <!-- LEFT COLUMN: INPUT PANEL (5 Cols) -->
+      <div class="lg:col-span-5 space-y-6">
+        <div class="glass-card rounded-2xl p-6 border-slate-800 shadow-xl">
+          
+          <!-- TAB SWITCHER -->
+          <div class="flex p-1 rounded-xl bg-slate-900/80 border border-slate-800 mb-6">
+            <button id="tab-upload-btn" onclick="switchTab('upload')" class="flex-1 py-2.5 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>Upload File</span>
+            </button>
+            <button id="tab-camera-btn" onclick="switchTab('camera')" class="flex-1 py-2.5 px-3 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-camera"></i>
+              <span>Kamera</span>
+            </button>
+            <button id="tab-sample-btn" onclick="switchTab('sample')" class="flex-1 py-2.5 px-3 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-images"></i>
+              <span>Sampel Lab</span>
+            </button>
+          </div>
+
+          <!-- TAB 1: UPLOAD FILE -->
+          <div id="tab-upload-content" class="space-y-4">
+            <!-- Dropzone -->
+            <div id="dropzone" 
+                 class="border-2 border-dashed border-slate-700 hover:border-emerald-500/60 rounded-xl p-8 text-center cursor-pointer transition bg-slate-900/40 hover:bg-slate-900/70 group"
+                 onclick="document.getElementById('file-input').click()">
+              <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp,image/jpg" class="hidden" onchange="handleFileSelect(event)">
+              
+              <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition duration-300">
+                <i class="fa-solid fa-arrow-up-from-bracket text-2xl"></i>
+              </div>
+              <h4 class="text-sm font-semibold text-white mb-1">Klik untuk pilih gambar atau drag & drop</h4>
+              <p class="text-xs text-slate-400">Mendukung file JPG, JPEG, PNG, WEBP (Maks 15 MB)</p>
+            </div>
+
+            <!-- Upload Preview Area -->
+            <div id="upload-preview-card" class="hidden space-y-4">
+              <div class="relative rounded-xl overflow-hidden bg-slate-950 border border-slate-800 aspect-video flex items-center justify-center">
+                <img id="upload-preview-img" src="" alt="Preview" class="max-h-full max-w-full object-contain">
+                <button onclick="resetUpload()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-900/80 text-slate-300 hover:text-red-400 flex items-center justify-center transition border border-slate-700">
+                  <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+              </div>
+
+              <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+                <span id="upload-filename" class="font-mono truncate max-w-[200px]">nama_file.jpg</span>
+                <span id="upload-filesize">-</span>
+              </div>
+
+              <button id="btn-process-upload" onclick="classifyUploadedFile()" class="w-full py-3 px-4 rounded-xl font-semibold text-sm bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition duration-200">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>Klasifikasikan Gambar</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- TAB 2: LIVE CAMERA / WEBCAM -->
+          <div id="tab-camera-content" class="hidden space-y-4">
+            <div class="relative rounded-xl overflow-hidden bg-slate-950 border border-slate-800 aspect-video flex items-center justify-center">
+              
+              <!-- Video Stream -->
+              <video id="webcam-video" autoplay playsinline muted class="w-full h-full object-cover hidden"></video>
+              
+              <!-- Canvas capture (hidden) -->
+              <canvas id="camera-canvas" class="hidden"></canvas>
+
+              <!-- Scanner line animation -->
+              <div id="camera-scanner" class="scanner-line hidden"></div>
+
+              <!-- Camera Placeholder (when off) -->
+              <div id="camera-placeholder" class="text-center p-6 space-y-3">
+                <div class="w-14 h-14 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center mx-auto">
+                  <i class="fa-solid fa-video-slash text-xl"></i>
+                </div>
+                <div>
+                  <h4 class="text-sm font-semibold text-white">Kamera Belum Aktif</h4>
+                  <p class="text-xs text-slate-400 max-w-xs mx-auto mt-1">Aktifkan izin kamera browser untuk memindai sandal secara langsung</p>
+                </div>
+                <button onclick="startCamera()" class="py-2.5 px-5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition inline-flex items-center gap-2 shadow-lg shadow-indigo-600/20">
+                  <i class="fa-solid fa-video"></i>
+                  <span>Buka Kamera</span>
+                </button>
+              </div>
+
+              <!-- Captured Snapshot Preview -->
+              <img id="camera-snapshot-preview" src="" alt="Snapshot" class="w-full h-full object-contain hidden">
+            </div>
+
+            <!-- Camera Controls (when active) -->
+            <div id="camera-controls" class="hidden space-y-3">
+              <div class="grid grid-cols-2 gap-3">
+                <button onclick="captureAndClassify()" class="py-3 px-4 rounded-xl font-semibold text-xs sm:text-sm bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition">
+                  <i class="fa-solid fa-camera"></i>
+                  <span>Ambil & Klasifikasi</span>
+                </button>
+                <button onclick="switchCameraFacing()" class="py-3 px-4 rounded-xl font-semibold text-xs sm:text-sm bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center justify-center gap-2 transition">
+                  <i class="fa-solid fa-arrows-rotate"></i>
+                  <span>Ganti Kamera</span>
+                </button>
+              </div>
+
+              <div class="flex items-center justify-between pt-1">
+                <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer select-none">
+                  <input type="checkbox" id="auto-detect-toggle" onchange="toggleAutoDetect(event)" class="rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-emerald-500">
+                  <span>Auto-Scan tiap 4 detik</span>
+                </label>
+                <button onclick="stopCamera()" class="text-xs text-red-400 hover:text-red-300 transition">
+                  <i class="fa-solid fa-power-off mr-1"></i> Matikan Kamera
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: LAB SAMPLES GALLERY -->
+          <div id="tab-sample-content" class="hidden space-y-4">
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Klik salah satu citra sampel dari dataset lab di bawah ini untuk langsung melakukan pengujian inferensi:
+            </p>
+
+            <div id="samples-grid" class="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
+              <div class="col-span-2 text-center py-8 text-xs text-slate-500">
+                <i class="fa-solid fa-spinner fa-spin mr-1"></i> Memuat sampel gambar...
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- QUICK GUIDELINE CARD -->
+        <div class="glass-card rounded-2xl p-5 border-slate-800 text-xs space-y-2 text-slate-400">
+          <div class="flex items-center gap-2 text-slate-200 font-semibold">
+            <i class="fa-solid fa-lightbulb text-amber-400"></i>
+            <span>Tips Pemotretan Terbaik:</span>
+          </div>
+          <ul class="list-disc list-inside space-y-1 text-slate-400 pl-1">
+            <li>Arahkan kamera menghadap area deretan sandal dari sudut miring atau atas (top-down / oblique).</li>
+            <li>Pastikan pencahayaan cukup agar tekstur GLCM dan kontras garis sandal terdeteksi tajam.</li>
+            <li>Sistem otomatis melakukan pemotongan fokus tengah <em>(center-crop)</em> untuk membuang area kosong.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: RESULTS PANEL (7 Cols) -->
+      <div class="lg:col-span-7 space-y-6">
+
+        <!-- INITIAL STATE (EMPTY) -->
+        <div id="result-empty-card" class="glass-card rounded-2xl p-12 border-slate-800 text-center space-y-4 flex flex-col items-center justify-center min-h-[460px]">
+          <div class="w-20 h-20 rounded-3xl bg-slate-800/60 border border-slate-700/60 flex items-center justify-center text-slate-500 mb-2">
+            <i class="fa-solid fa-chart-pie text-3xl"></i>
+          </div>
+          <div class="max-w-md space-y-1">
+            <h3 class="text-lg font-bold text-white">Menunggu Masukan Citra</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Pilih gambar melalui <strong>Upload File</strong>, nyalakan <strong>Kamera</strong>, atau gunakan <strong>Sampel Lab</strong> di panel kiri untuk memulai proses ekstraksi 14 fitur dan klasifikasi XGBoost.
+            </p>
+          </div>
+        </div>
+
+        <!-- LOADING STATE -->
+        <div id="result-loading-card" class="hidden glass-card rounded-2xl p-12 border-slate-800 text-center space-y-4 flex flex-col items-center justify-center min-h-[460px]">
+          <div class="relative w-20 h-20 flex items-center justify-center">
+            <div class="absolute inset-0 rounded-full border-4 border-slate-800 border-t-emerald-500 animate-spin"></div>
+            <i class="fa-solid fa-brain text-2xl text-emerald-400"></i>
+          </div>
+          <div class="space-y-1">
+            <h3 class="text-base font-bold text-white">Mengekstrak Fitur & Mengklasifikasi...</h3>
+            <p class="text-xs text-slate-400">Menghitung 9 Momen Warna RGB & Matriks Spasial GLCM Haralick</p>
+          </div>
+        </div>
+
+        <!-- ACTIVE RESULT DISPLAY -->
+        <div id="result-active-card" class="hidden space-y-6">
+
+          <!-- MAIN PREDICTION BANNER -->
+          <div id="prediction-banner" class="glass-card rounded-2xl p-6 border-slate-800 relative overflow-hidden transition-all duration-300">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+              
+              <!-- Left: Status & Confidence -->
+              <div class="flex items-center gap-4">
+                <div id="status-icon-box" class="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl shadow-lg">
+                  <i id="status-icon" class="fa-solid fa-check"></i>
+                </div>
+                <div>
+                  <span class="text-xs uppercase tracking-wider font-semibold text-slate-400">Status Penataan:</span>
+                  <h3 id="status-label" class="text-3xl font-black tracking-tight text-white mt-0.5">RAPI</h3>
+                  <div class="flex items-center gap-2 mt-1">
+                    <span class="text-xs text-slate-400">Tingkat Keyakinan:</span>
+                    <span id="confidence-badge" class="font-mono text-sm font-bold text-emerald-400">98.4%</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right: Target Probabilities Breakdown -->
+              <div class="w-full sm:w-56 space-y-2.5 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-slate-300 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Kelas Rapi
+                  </span>
+                  <span id="prob-rapi" class="font-mono font-bold text-emerald-400">98.4%</span>
+                </div>
+                <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div id="prob-bar-rapi" class="h-full bg-emerald-500 rounded-full transition-all duration-500" style="width: 98%;"></div>
+                </div>
+
+                <div class="flex justify-between items-center text-xs pt-1">
+                  <span class="text-slate-300 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-rose-400"></span> Kelas Berantakan
+                  </span>
+                  <span id="prob-berantakan" class="font-mono font-bold text-rose-400">1.6%</span>
+                </div>
+                <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div id="prob-bar-berantakan" class="h-full bg-rose-500 rounded-full transition-all duration-500" style="width: 2%;"></div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Recommendation Alert -->
+            <div id="recommendation-box" class="mt-5 p-4 rounded-xl text-xs flex items-start gap-3 bg-slate-900/80 border border-slate-700/60 text-slate-300">
+              <i class="fa-solid fa-circle-info text-emerald-400 text-sm mt-0.5 shrink-0"></i>
+              <p id="recommendation-text" class="leading-relaxed">
+                Kondisi sandal tertata rapi sesuai standar operasional laboratorium komputer.
+              </p>
+            </div>
+          </div>
+
+          <!-- INPUT IMAGE & PREPROCESSING STAGES -->
+          <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-4">
+            <div class="flex items-center justify-between">
+              <h4 class="font-bold text-sm text-white flex items-center gap-2">
+                <i class="fa-solid fa-layer-group text-indigo-400"></i>
+                <span>Visualisasi Tahapan Preprocessing Citra</span>
+              </h4>
+              <span id="result-timestamp" class="text-xs text-slate-500 font-mono">Waktu</span>
+            </div>
+
+            <!-- 4 Stage Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div class="space-y-1.5 text-center">
+                <div class="rounded-xl overflow-hidden bg-slate-950 border border-slate-800 aspect-square flex items-center justify-center p-1">
+                  <img id="stage-original" src="" class="max-h-full max-w-full object-contain rounded-lg">
+                </div>
+                <span class="text-[11px] text-slate-400 font-medium block truncate">1. Citra Input</span>
+              </div>
+              <div class="space-y-1.5 text-center">
+                <div class="rounded-xl overflow-hidden bg-slate-950 border border-slate-800 aspect-square flex items-center justify-center p-1">
+                  <img id="stage-crop" src="" class="max-h-full max-w-full object-contain rounded-lg">
+                </div>
+                <span class="text-[11px] text-slate-400 font-medium block truncate">2. Center Crop</span>
+              </div>
+              <div class="space-y-1.5 text-center">
+                <div class="rounded-xl overflow-hidden bg-slate-950 border border-slate-800 aspect-square flex items-center justify-center p-1">
+                  <img id="stage-edge" src="" class="max-h-full max-w-full object-contain rounded-lg">
+                </div>
+                <span class="text-[11px] text-slate-400 font-medium block truncate">3. Sobel Edge</span>
+              </div>
+              <div class="space-y-1.5 text-center">
+                <div class="rounded-xl overflow-hidden bg-slate-950 border border-slate-800 aspect-square flex items-center justify-center p-1">
+                  <img id="stage-hybrid" src="" class="max-h-full max-w-full object-contain rounded-lg">
+                </div>
+                <span class="text-[11px] text-slate-400 font-medium block truncate">4. Input GLCM (32 Level)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 14 FEATURES EXTRACTED TABLE -->
+          <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="font-bold text-sm text-white flex items-center gap-2">
+                  <i class="fa-solid fa-table-list text-emerald-400"></i>
+                  <span>Detail 14 Fitur Hasil Ekstraksi Citra</span>
+                </h4>
+                <p class="text-xs text-slate-400">9 Fitur Momen Warna RGB + 5 Fitur Tekstur Spasial GLCM Haralick</p>
+              </div>
+              <button onclick="toggleFeatureTable()" class="text-xs text-slate-400 hover:text-white transition px-2 py-1 rounded bg-slate-800/80">
+                <span id="feat-toggle-text">Sembunyikan</span>
+                <i id="feat-toggle-icon" class="fa-solid fa-chevron-up ml-1 text-[10px]"></i>
+              </button>
+            </div>
+
+            <!-- Features Container -->
+            <div id="feature-table-container" class="overflow-x-auto">
+              <table class="w-full text-left text-xs text-slate-300">
+                <thead class="text-[11px] text-slate-400 uppercase bg-slate-900/80 border-b border-slate-800">
+                  <tr>
+                    <th class="py-2.5 px-3">Nama Fitur</th>
+                    <th class="py-2.5 px-3">Kategori</th>
+                    <th class="py-2.5 px-3 text-right">Nilai Ekstraksi</th>
+                    <th class="py-2.5 px-3 hidden sm:table-cell">Keterangan Representasi</th>
+                  </tr>
+                </thead>
+                <tbody id="features-tbody" class="divide-y divide-slate-800/60 font-mono">
+                  <!-- Injected via JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- RECENT CLASSIFICATION HISTORY LOG -->
+    <section class="glass-card rounded-2xl p-6 border-slate-800 space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-clock-rotate-left text-slate-400"></i>
+          <h3 class="font-bold text-sm text-white">Riwayat Pemindaian Sesi Ini</h3>
+          <span id="history-count" class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">0 scan</span>
+        </div>
+        <button onclick="clearHistory()" class="text-xs text-slate-500 hover:text-red-400 transition">
+          <i class="fa-regular fa-trash-can mr-1"></i> Bersihkan Riwayat
+        </button>
+      </div>
+
+      <div id="history-empty" class="text-center py-6 text-xs text-slate-500">
+        Belum ada riwayat pemindaian. Hasil klasifikasi akan tercatat secara otomatis di sini.
+      </div>
+
+      <div id="history-list" class="hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        <!-- Injected via JavaScript -->
+      </div>
+    </section>
+
+    <!-- INFO METODOLOGI & ARSITEKTUR SECTION -->
+    <section id="info-section" class="glass-card rounded-2xl p-6 sm:p-8 border-slate-800 space-y-6">
+      <div class="border-b border-slate-800 pb-4">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-circle-nodes text-indigo-400"></i>
+          <span>Tentang Metodologi & Arsitektur Sistem</span>
+        </h3>
+        <p class="text-xs text-slate-400 mt-1">Implementasi Proyek Pengolahan Citra Digital (PSD) Laboratorium Komputer</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-300">
+        <div class="space-y-2 p-4 rounded-xl bg-slate-900/50 border border-slate-800/80">
+          <div class="text-emerald-400 font-semibold text-sm flex items-center gap-2">
+            <i class="fa-solid fa-palette"></i> 1. Momen Warna RGB (9 Fitur)
+          </div>
+          <p class="text-slate-400 leading-relaxed">
+            Menghitung Mean, Standar Deviasi, dan Skewness pada kanal Merah (R), Hijau (G), dan Biru (B) setelah citra di-crop pada area tengah (12%-88%) untuk memisahkan warna lantai dengan warna sandal.
+          </p>
+        </div>
+
+        <div class="space-y-2 p-4 rounded-xl bg-slate-900/50 border border-slate-800/80">
+          <div class="text-teal-400 font-semibold text-sm flex items-center gap-2">
+            <i class="fa-solid fa-border-all"></i> 2. GLCM Haralick (5 Fitur)
+          </div>
+          <p class="text-slate-400 leading-relaxed">
+            Citra ditingkatkan tepi dan kontrasnya menggunakan CLAHE & filter Sobel, lalu dikuantisasi ke 32 level keabuan. GLCM dihitung pada multi-jarak d=[1,3,5] dan 4 sudut untuk mengekstrak Energy, Entropy, Contrast, Correlation, & Homogeneity.
+          </p>
+        </div>
+
+        <div class="space-y-2 p-4 rounded-xl bg-slate-900/50 border border-slate-800/80">
+          <div class="text-indigo-400 font-semibold text-sm flex items-center gap-2">
+            <i class="fa-solid fa-bolt"></i> 3. Model XGBoost & PowerTransform
+          </div>
+          <p class="text-slate-400 leading-relaxed">
+            Fitur dinormalisasi dengan PowerTransformer (Yeo-Johnson) agar terdistribusi normal Gaussian, lalu diklasifikasi oleh Extreme Gradient Boosting (XGBoost) yang telah dilatih dengan akurasi 97.44%.
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-800/80 bg-slate-950/60 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <p>© 2026 Laboratorium Komputer • Pengolahan Sinyal Digital (PSD)</p>
+      <div class="flex items-center gap-4 text-slate-400">
+        <span>Teknologi: Python Flask • OpenCV • Scikit-Image • XGBoost • Joblib</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <script>
+    // Global State
+    let currentTab = 'upload';
+    let selectedFile = null;
+    let webcamStream = null;
+    let currentFacingMode = 'environment'; // default kamera belakang jika di smartphone
+    let autoDetectTimer = null;
+    let scanHistory = [];
+
+    // --- TAB SWITCHER ---
+    function switchTab(tab) {
+      currentTab = tab;
+      
+      const uploadBtn = document.getElementById('tab-upload-btn');
+      const cameraBtn = document.getElementById('tab-camera-btn');
+      const sampleBtn = document.getElementById('tab-sample-btn');
+
+      const uploadContent = document.getElementById('tab-upload-content');
+      const cameraContent = document.getElementById('tab-camera-content');
+      const sampleContent = document.getElementById('tab-sample-content');
+
+      // Inactive styles
+      [uploadBtn, cameraBtn, sampleBtn].forEach(b => {
+        b.className = "flex-1 py-2.5 px-3 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center justify-center gap-2";
+      });
+      [uploadContent, cameraContent, sampleContent].forEach(c => c.classList.add('hidden'));
+
+      // Active styles
+      if (tab === 'upload') {
+        uploadBtn.className = "flex-1 py-2.5 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm";
+        uploadContent.classList.remove('hidden');
+        stopCamera();
+      } else if (tab === 'camera') {
+        cameraBtn.className = "flex-1 py-2.5 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-sm";
+        cameraContent.classList.remove('hidden');
+        if (!webcamStream) startCamera();
+      } else if (tab === 'sample') {
+        sampleBtn.className = "flex-1 py-2.5 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2 bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm";
+        sampleContent.classList.remove('hidden');
+        stopCamera();
+        loadSamplesGallery();
+      }
+    }
+
+    // --- UPLOAD HANDLERS ---
+    const dropzone = document.getElementById('dropzone');
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('border-emerald-500', 'bg-slate-900/80');
+    });
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('border-emerald-500', 'bg-slate-900/80');
+    });
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('border-emerald-500', 'bg-slate-900/80');
+      if (e.dataTransfer.files.length > 0) {
+        processSelectedFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    function handleFileSelect(event) {
+      if (event.target.files.length > 0) {
+        processSelectedFile(event.target.files[0]);
+      }
+    }
+
+    function processSelectedFile(file) {
+      if (!file.type.match('image.*')) {
+        alert('File yang dipilih harus berupa citra gambar (JPG, PNG, WEBP).');
+        return;
+      }
+      selectedFile = file;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        document.getElementById('upload-preview-img').src = e.target.result;
+        document.getElementById('upload-filename').innerText = file.name;
+        document.getElementById('upload-filesize').innerText = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+        
+        document.getElementById('dropzone').classList.add('hidden');
+        document.getElementById('upload-preview-card').classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function resetUpload() {
+      selectedFile = null;
+      document.getElementById('file-input').value = '';
+      document.getElementById('dropzone').classList.remove('hidden');
+      document.getElementById('upload-preview-card').classList.add('hidden');
+    }
+
+    async function classifyUploadedFile() {
+      if (!selectedFile) return;
+
+      showLoading(true);
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      try {
+        const response = await fetch('/predict_file', {
+          method: 'POST',
+          body: formData
+        });
+        const result = await response.json();
+        if (result.error) {
+          alert('Error: ' + result.error);
+        } else {
+          displayResult(result);
+        }
+      } catch (err) {
+        alert('Gagal menghubungi server: ' + err.message);
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // --- WEBCAM HANDLERS ---
+    async function startCamera() {
+      const video = document.getElementById('webcam-video');
+      const placeholder = document.getElementById('camera-placeholder');
+      const controls = document.getElementById('camera-controls');
+      const scanner = document.getElementById('camera-scanner');
+
+      try {
+        const constraints = {
+          video: {
+            facingMode: currentFacingMode,
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        };
+        webcamStream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = webcamStream;
+        video.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+        controls.classList.remove('hidden');
+        scanner.classList.remove('hidden');
+      } catch (err) {
+        console.error('Kamera error:', err);
+        alert('Tidak dapat mengakses kamera: ' + err.message + '\nPastikan izin kamera telah diberikan di browser.');
+      }
+    }
+
+    function stopCamera() {
+      if (webcamStream) {
+        webcamStream.getTracks().forEach(track => track.stop());
+        webcamStream = null;
+      }
+      if (autoDetectTimer) {
+        clearInterval(autoDetectTimer);
+        autoDetectTimer = null;
+        document.getElementById('auto-detect-toggle').checked = false;
+      }
+      document.getElementById('webcam-video').classList.add('hidden');
+      document.getElementById('camera-placeholder').classList.remove('hidden');
+      document.getElementById('camera-controls').classList.add('hidden');
+      document.getElementById('camera-scanner').classList.add('hidden');
+    }
+
+    function switchCameraFacing() {
+      currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+      if (webcamStream) {
+        stopCamera();
+        startCamera();
+      }
+    }
+
+    async function captureAndClassify() {
+      const video = document.getElementById('webcam-video');
+      const canvas = document.getElementById('camera-canvas');
+      if (!webcamStream || video.videoWidth === 0) return;
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const base64Data = canvas.toDataURL('image/jpeg', 0.85);
+
+      showLoading(true);
+      try {
+        const response = await fetch('/predict_camera', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: base64Data })
+        });
+        const result = await response.json();
+        if (result.error) {
+          alert('Error kamera: ' + result.error);
+        } else {
+          displayResult(result);
+        }
+      } catch (err) {
+        console.error('Gagal klasifikasi kamera:', err);
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    function toggleAutoDetect(event) {
+      if (event.target.checked) {
+        captureAndClassify(); // Scan langsung
+        autoDetectTimer = setInterval(() => {
+          if (webcamStream && currentTab === 'camera') {
+            captureAndClassify();
+          }
+        }, 4000);
+      } else {
+        if (autoDetectTimer) {
+          clearInterval(autoDetectTimer);
+          autoDetectTimer = null;
+        }
+      }
+    }
+
+    // --- SAMPLES GALLERY ---
+    let samplesLoaded = false;
+    async function loadSamplesGallery() {
+      if (samplesLoaded) return;
+      const grid = document.getElementById('samples-grid');
+
+      try {
+        const response = await fetch('/api/samples');
+        const data = await response.json();
+        
+        if (data.samples && data.samples.length > 0) {
+          grid.innerHTML = '';
+          data.samples.forEach(s => {
+            const card = document.createElement('div');
+            card.className = "group relative rounded-xl overflow-hidden bg-slate-900 border border-slate-800 hover:border-emerald-500/50 cursor-pointer transition p-2 text-center space-y-1.5";
+            card.onclick = () => classifySample(s.category, s.filename);
+
+            const badgeColor = s.category === 'rapi' 
+              ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' 
+              : 'bg-rose-500/20 text-rose-400 border-rose-500/30';
+
+            card.innerHTML = `
+              <div class="aspect-video w-full rounded-lg overflow-hidden bg-slate-950 flex items-center justify-center relative">
+                <img src="${s.url}" alt="${s.filename}" class="object-cover w-full h-full group-hover:scale-105 transition duration-300">
+                <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                  <span class="text-[11px] font-bold text-white bg-slate-900/90 px-2 py-1 rounded-md border border-slate-700">
+                    <i class="fa-solid fa-play text-emerald-400 mr-1"></i> Uji Coba
+                  </span>
+                </div>
+              </div>
+              <div class="flex items-center justify-between px-1">
+                <span class="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded border ${badgeColor}">${s.category}</span>
+                <span class="text-[10px] text-slate-400 font-mono truncate max-w-[90px]">${s.filename}</span>
+              </div>
+            `;
+            grid.appendChild(card);
+          });
+          samplesLoaded = true;
+        } else {
+          grid.innerHTML = '<div class="col-span-2 text-center py-6 text-xs text-slate-500">Tidak ada sampel gambar ditemukan.</div>';
+        }
+      } catch (err) {
+        grid.innerHTML = '<div class="col-span-2 text-center py-6 text-xs text-red-400">Gagal memuat sampel.</div>';
+      }
+    }
+
+    async function classifySample(category, filename) {
+      showLoading(true);
+      try {
+        const response = await fetch('/predict_sample', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ category, filename })
+        });
+        const result = await response.json();
+        if (result.error) {
+          alert('Error sampel: ' + result.error);
+        } else {
+          displayResult(result);
+        }
+      } catch (err) {
+        alert('Gagal mengklasifikasikan sampel: ' + err.message);
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // --- DISPLAY RESULT LOGIC ---
+    function displayResult(result) {
+      document.getElementById('result-empty-card').classList.add('hidden');
+      document.getElementById('result-active-card').classList.remove('hidden');
+
+      const isRapi = result.label.toLowerCase() === 'rapi';
+      const banner = document.getElementById('prediction-banner');
+      const statusIconBox = document.getElementById('status-icon-box');
+      const statusIcon = document.getElementById('status-icon');
+      const statusLabel = document.getElementById('status-label');
+      const confidenceBadge = document.getElementById('confidence-badge');
+
+      // Update Styling by Status
+      if (isRapi) {
+        banner.className = "glass-card rounded-2xl p-6 border-emerald-500/40 bg-gradient-to-br from-emerald-950/30 via-slate-900/60 to-slate-900/80";
+        statusIconBox.className = "w-16 h-16 rounded-2xl flex items-center justify-center text-2xl shadow-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-emerald-500/10";
+        statusIcon.className = "fa-solid fa-check-double";
+        statusLabel.innerText = "RAPI";
+        statusLabel.className = "text-3xl font-black tracking-tight text-emerald-400 mt-0.5";
+        confidenceBadge.className = "font-mono text-sm font-bold text-emerald-400";
+      } else {
+        banner.className = "glass-card rounded-2xl p-6 border-rose-500/40 bg-gradient-to-br from-rose-950/30 via-slate-900/60 to-slate-900/80";
+        statusIconBox.className = "w-16 h-16 rounded-2xl flex items-center justify-center text-2xl shadow-lg bg-rose-500/20 text-rose-400 border border-rose-500/40 shadow-rose-500/10";
+        statusIcon.className = "fa-solid fa-triangle-exclamation";
+        statusLabel.innerText = "BERANTAKAN";
+        statusLabel.className = "text-3xl font-black tracking-tight text-rose-400 mt-0.5";
+        confidenceBadge.className = "font-mono text-sm font-bold text-rose-400";
+      }
+
+      confidenceBadge.innerText = result.confidence + '%';
+
+      // Probabilities
+      const probRapi = result.probabilities['rapi'] || 0;
+      const probBerantakan = result.probabilities['berantakan'] || 0;
+
+      document.getElementById('prob-rapi').innerText = probRapi + '%';
+      document.getElementById('prob-bar-rapi').style.width = probRapi + '%';
+
+      document.getElementById('prob-berantakan').innerText = probBerantakan + '%';
+      document.getElementById('prob-bar-berantakan').style.width = probBerantakan + '%';
+
+      // Recommendation Text
+      document.getElementById('recommendation-text').innerText = result.recommendation;
+      document.getElementById('result-timestamp').innerText = result.timestamp;
+
+      // Preprocessing Stages
+      if (result.stages) {
+        document.getElementById('stage-original').src = result.original_image_b64;
+        document.getElementById('stage-crop').src = result.stages.crop_b64;
+        document.getElementById('stage-edge').src = result.stages.edge_b64;
+        document.getElementById('stage-hybrid').src = result.stages.hybrid_b64;
+      }
+
+      // Feature Table Injection
+      const tbody = document.getElementById('features-tbody');
+      tbody.innerHTML = '';
+      if (result.features) {
+        result.features.forEach(f => {
+          const row = document.createElement('tr');
+          row.className = "hover:bg-slate-800/40 transition";
+          row.innerHTML = `
+            <td class="py-2 px-3 font-semibold text-white">${f.name}</td>
+            <td class="py-2 px-3">
+              <span class="px-2 py-0.5 rounded text-[10px] font-sans ${f.group === 'Warna' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'}">
+                ${f.group}
+              </span>
+            </td>
+            <td class="py-2 px-3 text-right font-mono text-emerald-400 font-bold">${f.value}</td>
+            <td class="py-2 px-3 text-slate-400 text-[11px] font-sans hidden sm:table-cell">${f.desc}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+
+      // Add to session scan history
+      addToHistory(result);
+    }
+
+    function toggleFeatureTable() {
+      const container = document.getElementById('feature-table-container');
+      const text = document.getElementById('feat-toggle-text');
+      const icon = document.getElementById('feat-toggle-icon');
+
+      if (container.classList.contains('hidden')) {
+        container.classList.remove('hidden');
+        text.innerText = 'Sembunyikan';
+        icon.className = 'fa-solid fa-chevron-up ml-1 text-[10px]';
+      } else {
+        container.classList.add('hidden');
+        text.innerText = 'Tampilkan';
+        icon.className = 'fa-solid fa-chevron-down ml-1 text-[10px]';
+      }
+    }
+
+    function showLoading(isLoading) {
+      const loading = document.getElementById('result-loading-card');
+      const active = document.getElementById('result-active-card');
+      const empty = document.getElementById('result-empty-card');
+
+      if (isLoading) {
+        loading.classList.remove('hidden');
+        active.classList.add('hidden');
+        empty.classList.add('hidden');
+      } else {
+        loading.classList.add('hidden');
+      }
+    }
+
+    // --- HISTORY MANAGEMENT ---
+    function addToHistory(item) {
+      scanHistory.unshift(item);
+      if (scanHistory.length > 8) scanHistory.pop(); // Max 8 recent scans
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const emptyMsg = document.getElementById('history-empty');
+      const list = document.getElementById('history-list');
+      const count = document.getElementById('history-count');
+
+      count.innerText = scanHistory.length + ' scan';
+
+      if (scanHistory.length === 0) {
+        emptyMsg.classList.remove('hidden');
+        list.classList.add('hidden');
+        return;
+      }
+
+      emptyMsg.classList.add('hidden');
+      list.classList.remove('hidden');
+      list.innerHTML = '';
+
+      scanHistory.forEach((h, idx) => {
+        const isRapi = h.label.toLowerCase() === 'rapi';
+        const card = document.createElement('div');
+        card.className = "p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3";
+        card.innerHTML = `
+          <img src="${h.original_image_b64}" class="w-12 h-12 rounded-lg object-cover bg-slate-950 shrink-0">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-1">
+              <span class="text-xs font-bold ${isRapi ? 'text-emerald-400' : 'text-rose-400'} uppercase">${h.label}</span>
+              <span class="text-[10px] font-mono text-slate-400">${h.confidence}%</span>
+            </div>
+            <p class="text-[10px] text-slate-500 truncate">${h.filename}</p>
+            <span class="text-[9px] text-slate-500 font-mono block">${h.timestamp.split(',')[1] || h.timestamp}</span>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function clearHistory() {
+      scanHistory = [];
+      renderHistory();
+    }
+  </script>
+</body>
+</html>
